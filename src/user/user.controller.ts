@@ -86,8 +86,8 @@ export class UserController {
     }
   }
 
-  // @UseGuards(JwtGuard, RolesGuard)
-  // @Roles(Role.ADMIN)
+  @UseGuards(JwtGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @Get('/getuserslist')
   async getUsersList() {
     try{
@@ -101,6 +101,8 @@ export class UserController {
     }
   }
 
+  @UseGuards(JwtGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @Get('/getmerchantslist')
   async getMerchantsList() {
     try{
@@ -114,6 +116,8 @@ export class UserController {
     }
   }
 
+  @UseGuards(JwtGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @Get('/getcustomerslist')
   async getCustomersList() {
     try{
