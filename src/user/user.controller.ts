@@ -101,6 +101,32 @@ export class UserController {
     }
   }
 
+  @Get('/getmerchantslist')
+  async getMerchantsList() {
+    try{
+      const list = await this.userService.getMerchantsList();
+      return list
+    } catch(error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error,
+      }
+    }
+  }
+
+  @Get('/getcustomerslist')
+  async getCustomersList() {
+    try{
+      const list = await this.userService.getCustomersList();
+      return list
+    } catch(error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error,
+      }
+    }
+  }
+
   @UseGuards(JwtGuard)
   @Post('/getuserbyid')
   async getUserById(@Body() req: userDto) {

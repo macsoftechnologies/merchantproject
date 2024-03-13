@@ -378,6 +378,75 @@ export class UserService {
     }
   }
 
+  async getMerchantsList() {
+    try{
+      const usersList = await this.userModel.find();
+      if(usersList.length>0) {
+        let list = [];
+        for(const merchantRecord of usersList) {
+          const findUser: UserModel | null = await this.userModel.findOne({_id: merchantRecord._id});
+          const isMerchant = findUser.role.includes(Role.MERCHANT);
+          if(isMerchant) {
+            list.push(merchantRecord);
+          } else {
+            continue;
+          }
+        }
+        return {
+          statusCode: HttpStatus.OK,
+          message: "List of users",
+          merchantsCount: list.length,
+          data: list,
+        }
+      } else {
+        return {
+          statusCode: HttpStatus.NOT_FOUND,
+          message: "Users Not Found",
+        }
+      }
+    } catch(error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error,
+      }
+    }
+  }
+
+  async getCustomersList() {
+    try{
+      const usersList = await this.userModel.find();
+      if(usersList.length>0) {
+        let list = [];
+        for(const merchantRecord of usersList) {
+          const findUser: UserModel | null = await this.userModel.findOne({_id: merchantRecord._id});
+          const isMerchant = findUser.role.includes(Role.MERCHANT);
+          const isCustomer = findUser.role.includes(Role.CUSTOMER);
+          if(isCustomer && !isMerchant) {
+            list.push(merchantRecord);
+          } else {
+            continue;
+          }
+        }
+        return {
+          statusCode: HttpStatus.OK,
+          message: "List of users",
+          customersCount: list.length,
+          data: list,
+        }
+      } else {
+        return {
+          statusCode: HttpStatus.NOT_FOUND,
+          message: "Users Not Found",
+        }
+      }
+    } catch(error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error,
+      }
+    }
+  }
+
   async getUserById(req: userDto) {
     try{
       const findUser = await this.userModel.findOne({_id: req._id});
