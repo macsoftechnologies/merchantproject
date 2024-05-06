@@ -5,53 +5,19 @@ import { Model } from 'mongoose';
 import { User } from 'src/user/schema/user.schema';
 import { productDto } from './dto/product.dto';
 import { Role } from 'src/auth/guards/roles.enum';
-
-interface UserModel {
-  _id: string;
-  userId: string;
-  userName: string;
-  email: string;
-  password: string;
-  address: string;
-  profileImage: string;
-  mobileNumber: string;
-  altMobileNumber: string;
-  shopName: string;
-  shopLocation: string;
-  shopImage: string;
-  shopLicense: string;
-  role: string[]; // Assuming role is an array of strings
-  createdAt: string;
-  updatedAt: string;
-  __v: number;
-}
+import { merchantProductDto } from './dto/merchantproduct.dto';
+import { MerchantProduct } from './schema/merchantproduct.schema';
 
 @Injectable()
 export class ProductService {
   constructor(
     @InjectModel(Product.name) private readonly productModel: Model<Product>,
     @InjectModel(User.name) private readonly userModel: Model<User>,
+    @InjectModel(MerchantProduct.name) readonly merchantProductModel: Model<MerchantProduct>,
   ) {}
 
-  async addMerchantProduct(req: productDto, image) {
+  async addAdminProduct(req: productDto, image) {
     try {
-      const findUser: UserModel | null = await this.userModel.findOne({
-        userId: req.userId,
-      });
-      console.log('...user', findUser);
-      if (!findUser) {
-        return {
-          statusCode: HttpStatus.NOT_FOUND,
-          message: 'User not found',
-        };
-      } else {
-        const isMerchant = findUser.role.includes(Role.MERCHANT);
-        if (!isMerchant) {
-          return {
-            statusCode: HttpStatus.NOT_ACCEPTABLE,
-            message: 'Merchant can only add products',
-          };
-        }
         if (image) {
           const reqDoc = image.map((doc, index) => {
             let IsPrimary = false;
@@ -67,7 +33,6 @@ export class ProductService {
         const addproduct = await this.productModel.create({
           productName: req.productName,
           productSpecifications: req.productSpecifications,
-          userId: findUser.userId,
           productImage: req.productImage,
         });
         if (addproduct) {
@@ -82,7 +47,6 @@ export class ProductService {
             message: 'Product failed to add',
           };
         }
-      }
     } catch (error) {
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -93,16 +57,7 @@ export class ProductService {
 
   async getProductsList() {
     try {
-      const productsList = await this.productModel.aggregate([
-        {
-          $lookup: {
-            from: 'users',
-            foreignField: 'userId',
-            localField: 'userId',
-            as: 'userId',
-          },
-        },
-      ]);
+      const productsList = await this.productModel.find();
       if (productsList.length > 0) {
         return {
           statusCode: HttpStatus.OK,
@@ -114,67 +69,6 @@ export class ProductService {
           statusCode: HttpStatus.NOT_FOUND,
           message: 'Products not found',
         };
-      }
-    } catch (error) {
-      return {
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: error,
-      };
-    }
-  }
-
-  async getProductsOfUser(req: productDto) {
-    try {
-      const productsList: any = await this.productModel.find({
-        userId: req.userId,
-      });
-      console.log(productsList);
-      if (productsList.length > 0) {
-        return {
-          statusCode: HttpStatus.OK,
-          message: 'List of products',
-          count: productsList.length,
-          data: productsList,
-        };
-      } else {
-        return {
-          statusCode: HttpStatus.NOT_FOUND,
-          message: 'Products not found',
-        };
-      }
-    } catch (error) {
-      return {
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: error,
-      };
-    }
-  }
-
-
-  async searchProducts(req: productDto) {
-    try {
-      const searchProd = await this.productModel.aggregate([
-        {$match: {productName: { $regex: new RegExp(req.productName, 'i') }}},
-        {
-          $lookup: {
-            from: "users",
-            foreignField: "userId",
-            localField: "userId",
-            as: "userId",
-          }
-        }
-      ]);
-      if(searchProd.length>0) {
-        return {
-          statusCode: HttpStatus.OK,
-          message: "List of searched product",
-          data: searchProd,
-        }
-      } else {
-        return{
-          statusCode: HttpStatus.NOT_FOUND,
-          message: "Searched products not found",
-        }
       }
     } catch (error) {
       return {
@@ -188,21 +82,10 @@ export class ProductService {
     try{
       const findProduct = await this.productModel.findOne({_id});
       if(findProduct) {
-        const findProductUser = await this.productModel.aggregate([
-          {$match: {_id: findProduct._id}},
-          {
-            $lookup: {
-              from: "users",
-              localField: "userId",
-              foreignField: "userId",
-              as: "userId",
-            }
-          }
-        ]);
         return {
           statusCode: HttpStatus.OK,
           message: "Details of Selected Product",
-          data: findProductUser,
+          data: findProduct,
         }
       }
     } catch(error) {
@@ -303,6 +186,181 @@ export class ProductService {
         return {
           statusCode: HttpStatus.NOT_FOUND,
           message: "Product not found",
+        }
+      }
+    } catch(error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error,
+      }
+    }
+  }
+
+  async addMerchantProd(req: merchantProductDto) {
+    try{
+      const findUser = await this.userModel.findOne({userId: req.userId});
+      const findAdminProduct = await this.productModel.findOne({adminProductId: req.adminProductId});
+      const findExisted = await this.merchantProductModel.findOne({$and: [{userId: req.userId},{adminProductId: req.adminProductId}]});
+      if(!findUser) {
+        return {
+          statusCode: HttpStatus.NOT_FOUND,
+          message: "User not found.",
+        }
+      }
+      if(!findAdminProduct) {
+        return {
+          statusCode: HttpStatus.NOT_FOUND,
+          message: "Product not found.",
+        }
+      }
+      if(findExisted) {
+        return {
+          statusCode: HttpStatus.CONFLICT,
+          message: "Product Already added to user",
+        }
+      }
+      const addProd = await this.merchantProductModel.create(req);
+      if(addProd) {
+        const findProduct = await this.merchantProductModel.aggregate([
+          {$match: {_id: addProd._id}},
+          {
+            $lookup: {
+              from: "products",
+              localField: "adminProductId",
+              foreignField: "adminProductId",
+              as: "adminProductId",
+            }
+          }
+        ]);
+        return {
+          statusCode: HttpStatus.OK,
+          message: "Merchant Product Added Successfully",
+          data: findProduct,
+        }
+      }
+    } catch(error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error
+      }
+    }
+  }
+
+  async getMerchantProds(req: merchantProductDto) {
+    try{
+      const getProds = await this.merchantProductModel.aggregate([
+        {$match: {userId: req.userId}},
+        {
+          $lookup: {
+            from: "products",
+            localField: "adminProductId",
+            foreignField: "adminProductId",
+            as: "adminProductId"
+          }
+        }
+      ]);
+      if(getProds.length > 0) {
+        return {
+          statusCode: HttpStatus.OK,
+          message: "List of Merchant Products",
+          data: getProds,
+        }
+      } else {
+        return {
+          statusCode: HttpStatus.NOT_FOUND,
+          message:"Products not found for this merchant",
+        }
+      }
+    } catch(error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error,
+      }
+    }
+  }
+
+  async getMerchantProdById(req: merchantProductDto) {
+    try{
+      const findProd = await this.merchantProductModel.findOne({_id: req._id});
+      if(!findProd) {
+        return {
+          statusCode: HttpStatus.NOT_FOUND,
+          message: "Product Not Found",
+        }
+      }
+      const getProdById = await this.merchantProductModel.aggregate([
+        {$match: {_id: findProd._id}},
+        {
+          $lookup: {
+            from: "products",
+            localField: "adminProductId",
+            foreignField: "adminProductId",
+            as: "adminProductId",
+          }
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "userId",
+            foreignField: "userId",
+            as: "userId",
+          }
+        }
+      ]);
+      console.log("jsd",findProd);
+      if(getProdById) {
+        return {
+          statusCode: HttpStatus.OK,
+          message: "Details of Merchant Product",
+          data: getProdById,
+        }
+      } else {
+        return {
+          statusCode: HttpStatus.NOT_FOUND,
+          message: "Product Details Not Found",
+        }
+      }
+    } catch(error) {
+      return{
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error
+      }
+    }
+  }
+
+  async editMerchantProduct(req: merchantProductDto) {
+    try{
+      const editProd = await this.merchantProductModel.updateOne({_id: req._id}, {
+        $set: {price: req.price}
+      });
+      if(editProd) {
+        return {
+          statusCode: HttpStatus.OK,
+          message: "Merchant Product Updated Successfully",
+          data: editProd,
+        }
+      }
+    } catch(error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error
+      }
+    }
+  }
+
+  async deleteMerchantProduct(req: merchantProductDto) {
+    try{
+      const deleteProd = await this.merchantProductModel.deleteOne({_id: req._id});
+      if(deleteProd) {
+        return {
+          statusCode: HttpStatus.OK,
+          message: "Product Deleted Successfully",
+          data: deleteProd
+        }
+      } else {
+        return {
+          statusCode: HttpStatus.BAD_REQUEST,
+          mesage: "Product deletion failed",
         }
       }
     } catch(error) {

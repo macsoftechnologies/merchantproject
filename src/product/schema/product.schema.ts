@@ -1,10 +1,13 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 import { Document } from "mongoose"
+import { v4 as uuid } from "uuid"
 @Schema()
 export class specifications{}
 @Schema({ timestamps: true })
 
 export class Product extends Document{
+    @Prop({default: uuid})
+    adminProductId: string
     @Prop()
     productName: string
     @Prop({trim: true,strict:true,type:specifications})
@@ -12,11 +15,7 @@ export class Product extends Document{
         type:any 
     }
     @Prop()
-    userId: string
-    @Prop()
     productImage: string
-    @Prop()
-    price: number
 }
 
 export const productSchema = SchemaFactory.createForClass(Product);

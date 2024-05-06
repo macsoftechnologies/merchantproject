@@ -8,13 +8,14 @@ import { JwtGuard } from 'src/auth/guards/jwt.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/auth/guards/roles.decorator';
 import { Role } from 'src/auth/guards/roles.enum';
+import { merchantProductDto } from './dto/merchantproduct.dto';
 
 @Controller('product')
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
   @UseGuards(JwtGuard, RolesGuard)
-  @Roles(Role.MERCHANT)
+  @Roles(Role.ADMIN)
   @Post('/addproduct')
   @UseInterceptors(
     AnyFilesInterceptor({
@@ -32,22 +33,7 @@ export class ProductController {
   )
   async addProduct(@Body() req: productDto, @UploadedFiles() image) {
     try{
-      const addproduct = await this.productService.addMerchantProduct(req, image);
-      return addproduct
-    } catch(error) {
-      return {
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: error,
-      }
-    }
-  }
-
-  @UseGuards(JwtGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.CUSTOMER)
-  @Get('/getproductslist')
-  async getProductsList() {
-    try{
-      const addproduct = await this.productService.getProductsList();
+      const addproduct = await this.productService.addAdminProduct(req, image);
       return addproduct
     } catch(error) {
       return {
@@ -59,26 +45,11 @@ export class ProductController {
 
   @UseGuards(JwtGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.MERCHANT)
-  @Post('/getproductsofmerchant')
-  async getProductsOfMerchant(@Body() req: productDto) {
+  @Get('/getproductslist')
+  async getProductsList() {
     try{
-      const addproduct = await this.productService.getProductsOfUser(req);
+      const addproduct = await this.productService.getProductsList();
       return addproduct
-    } catch(error) {
-      return {
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: error,
-      }
-    }
-  }
-
-  @UseGuards(JwtGuard, RolesGuard)
-  @Roles(Role.CUSTOMER, Role.ADMIN)
-  @Post('/searchproducts')
-  async searchMerchantProducts(@Body() req: productDto) {
-    try{
-      const findSearchproducts = await this.productService.searchProducts(req);
-      return findSearchproducts
     } catch(error) {
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -102,7 +73,7 @@ export class ProductController {
   }
 
   @UseGuards(JwtGuard, RolesGuard)
-  @Roles(Role.MERCHANT, Role.ADMIN)
+  @Roles(Role.ADMIN)
   @Post('/deleteproduct')
   async deleteMerchantProd(@Body() req: productDto) {
     try{
@@ -117,7 +88,7 @@ export class ProductController {
   }
 
   @UseGuards(JwtGuard, RolesGuard)
-  @Roles(Role.MERCHANT, Role.ADMIN)
+  @Roles(Role.ADMIN)
   @Post("/updateproduct")
   @UseInterceptors(
     AnyFilesInterceptor({
@@ -141,6 +112,81 @@ export class ProductController {
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: error
+      }
+    }
+  }
+
+  @UseGuards(JwtGuard, RolesGuard)
+  @Roles(Role.MERCHANT)
+  @Post('/addmerchantproduct')
+  async addMerchantProduct(@Body() req: merchantProductDto) {
+    try{
+      const addmerchantprod = await this.productService.addMerchantProd(req);
+      return addmerchantprod
+    } catch(error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error,
+      }
+    }
+  }
+
+  @UseGuards(JwtGuard, RolesGuard)
+  @Roles(Role.MERCHANT, Role.ADMIN)
+  @Post('/getmerchantproducts')
+  async getMerchantProducts(@Body() req: merchantProductDto) {
+    try{
+      const addmerchantprod = await this.productService.getMerchantProds(req);
+      return addmerchantprod
+    } catch(error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error,
+      }
+    }
+  }
+
+  @UseGuards(JwtGuard, RolesGuard)
+  @Roles(Role.MERCHANT, Role.ADMIN, Role.CUSTOMER)
+  @Post('/getmerchantproductbyid')
+  async getMerchantProductById(@Body() req: merchantProductDto) {
+    try{
+      const addmerchantprod = await this.productService.getMerchantProdById(req);
+      return addmerchantprod
+    } catch(error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error,
+      }
+    }
+  }
+
+  @UseGuards(JwtGuard, RolesGuard)
+  @Roles(Role.MERCHANT)
+  @Post('/editmerchantproduct')
+  async editMerchantProduct(@Body() req: merchantProductDto) {
+    try{
+      const addmerchantprod = await this.productService.editMerchantProduct(req);
+      return addmerchantprod
+    } catch(error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error,
+      }
+    }
+  }
+
+  @UseGuards(JwtGuard, RolesGuard)
+  @Roles(Role.MERCHANT)
+  @Post('/deletemerchantproduct')
+  async deleteMerchantProduct(@Body() req: merchantProductDto) {
+    try{
+      const addmerchantprod = await this.productService.deleteMerchantProduct(req);
+      return addmerchantprod
+    } catch(error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error,
       }
     }
   }

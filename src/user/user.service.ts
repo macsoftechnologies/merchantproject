@@ -84,6 +84,9 @@ export class UserService {
             message: 'Please provide all required details',
           };
         }
+        if(!req.priority) {
+          req.priority = 0
+        }
         const createMerchant = await this.userModel.create({
           userName: req.userName,
           email: req.email,

@@ -30,6 +30,8 @@ export class User extends Document{
     shopLicense: string
     @Prop()
     role: []
+    @Prop()
+    priority: number
 }
 
 export const userSchema = SchemaFactory.createForClass(User);

@@ -10,6 +10,7 @@ import { RolesGuard } from './auth/guards/roles.guard';
 import { AdminModule } from './admin/admin.module';
 import { UserModule } from './user/user.module';
 import { ProductModule } from './product/product.module';
+import { AdvertisementsModule } from './advertisements/advertisements.module';
 // const mongoURI = process.env.MONGO_URI;
 const mongoURI =
   process.env.MONGO_URI ||
@@ -31,6 +32,7 @@ const mongoURI =
     AdminModule,
     UserModule,
     ProductModule,
+    AdvertisementsModule,
   ],
   controllers: [AppController],
   providers: [

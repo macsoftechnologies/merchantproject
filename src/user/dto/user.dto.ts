@@ -29,4 +29,6 @@ export class userDto{
     role: string[]
     @ApiProperty()
     _id: string
+    @ApiProperty()
+    priority: number
 }
