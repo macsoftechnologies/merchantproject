@@ -4,7 +4,7 @@ import { Document } from "mongoose";
 
 export class Advertisement extends Document{
     @Prop()
-    advertisement: string
+    advertisement: []
     @Prop()
     latitude: string
     @Prop()

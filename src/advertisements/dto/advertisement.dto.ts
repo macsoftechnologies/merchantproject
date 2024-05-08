@@ -4,7 +4,7 @@ export class advertisementDto{
     @ApiProperty()
     _id: string
     @ApiProperty()
-    advertisement: string
+    advertisement: []
     @ApiProperty()
     latitude: string
     @ApiProperty()

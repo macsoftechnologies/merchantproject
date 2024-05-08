@@ -31,4 +31,8 @@ export class userDto{
     _id: string
     @ApiProperty()
     priority: number
+    @ApiProperty()
+    latitude: number
+    @ApiProperty()
+    longitude: number
 }

@@ -32,6 +32,10 @@ export class User extends Document{
     role: []
     @Prop()
     priority: number
+    @Prop()
+    latitude: number
+    @Prop()
+    longitude: number
 }
 
 export const userSchema = SchemaFactory.createForClass(User);
