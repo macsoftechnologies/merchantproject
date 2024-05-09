@@ -100,6 +100,8 @@ export class UserService {
           shopName: req.shopName,
           shopLocation: req.shopLocation,
           role: Role.MERCHANT,
+          latitude: req.latitude,
+          longitude: req.longitude
         });
         if (createMerchant) {
           return {
@@ -185,6 +187,8 @@ export class UserService {
           shopName: '',
           shopLocation: '',
           role: Role.CUSTOMER,
+          latitude: req.latitude,
+          longitude: req.longitude
         });
         if (createCustomer) {
           return {

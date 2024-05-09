@@ -190,4 +190,18 @@ export class ProductController {
       }
     }
   }
+
+  @UseGuards(JwtGuard)
+  @Post('/searchproducts')
+  async searchProducts(@Body() req:merchantProductDto) {
+    try{
+      const getproducts = await this.productService.searchProductsByLocation(req);
+      return getproducts
+    } catch(error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error,
+      }
+    }
+  }
 }

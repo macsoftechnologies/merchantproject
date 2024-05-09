@@ -9,4 +9,10 @@ export class merchantProductDto{
     userId: string
     @ApiProperty()
     price: number
+    @ApiProperty()
+    latitude: number
+    @ApiProperty()
+    longitude: number
+    @ApiProperty()
+    productName: string
 }

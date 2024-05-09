@@ -13,40 +13,41 @@ export class ProductService {
   constructor(
     @InjectModel(Product.name) private readonly productModel: Model<Product>,
     @InjectModel(User.name) private readonly userModel: Model<User>,
-    @InjectModel(MerchantProduct.name) readonly merchantProductModel: Model<MerchantProduct>,
+    @InjectModel(MerchantProduct.name)
+    readonly merchantProductModel: Model<MerchantProduct>,
   ) {}
 
   async addAdminProduct(req: productDto, image) {
     try {
-        if (image) {
-          const reqDoc = image.map((doc, index) => {
-            let IsPrimary = false;
-            if (index == 0) {
-              IsPrimary = true;
-            }
-            const randomNumber = Math.floor(Math.random() * 1000000 + 1);
-            return doc.filename;
-          });
-
-          req.productImage = reqDoc.toString();
-        }
-        const addproduct = await this.productModel.create({
-          productName: req.productName,
-          productSpecifications: req.productSpecifications,
-          productImage: req.productImage,
+      if (image) {
+        const reqDoc = image.map((doc, index) => {
+          let IsPrimary = false;
+          if (index == 0) {
+            IsPrimary = true;
+          }
+          const randomNumber = Math.floor(Math.random() * 1000000 + 1);
+          return doc.filename;
         });
-        if (addproduct) {
-          return {
-            statusCode: HttpStatus.OK,
-            message: 'Product added Successfully',
-            data: addproduct,
-          };
-        } else {
-          return {
-            statusCode: HttpStatus.EXPECTATION_FAILED,
-            message: 'Product failed to add',
-          };
-        }
+
+        req.productImage = reqDoc.toString();
+      }
+      const addproduct = await this.productModel.create({
+        productName: req.productName,
+        productSpecifications: req.productSpecifications,
+        productImage: req.productImage,
+      });
+      if (addproduct) {
+        return {
+          statusCode: HttpStatus.OK,
+          message: 'Product added Successfully',
+          data: addproduct,
+        };
+      } else {
+        return {
+          statusCode: HttpStatus.EXPECTATION_FAILED,
+          message: 'Product failed to add',
+        };
+      }
     } catch (error) {
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -79,57 +80,57 @@ export class ProductService {
   }
 
   async getProductById(_id: string) {
-    try{
-      const findProduct = await this.productModel.findOne({_id});
-      if(findProduct) {
+    try {
+      const findProduct = await this.productModel.findOne({ _id });
+      if (findProduct) {
         return {
           statusCode: HttpStatus.OK,
-          message: "Details of Selected Product",
+          message: 'Details of Selected Product',
           data: findProduct,
-        }
+        };
       }
-    } catch(error) {
+    } catch (error) {
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: error,
-      }
+      };
     }
   }
 
   async deleteMerchantProd(req: productDto) {
-    try{
-      const findProduct = await this.productModel.findOne({_id: req._id});
-      if(!findProduct) {
+    try {
+      const findProduct = await this.productModel.findOne({ _id: req._id });
+      if (!findProduct) {
         return {
           statusCode: HttpStatus.NOT_FOUND,
-          message: "Product not found",
-        }
+          message: 'Product not found',
+        };
       } else {
-        const deleteProd = await this.productModel.deleteOne({_id: req._id});
-      if(deleteProd) {
-        return {
-          statusCode: HttpStatus.OK,
-          message: "Product Deleted Successfully",
-        }
-      } else {
-        return {
-          statusCode: HttpStatus.EXPECTATION_FAILED,
-          message: "Product Deletion failed",
+        const deleteProd = await this.productModel.deleteOne({ _id: req._id });
+        if (deleteProd) {
+          return {
+            statusCode: HttpStatus.OK,
+            message: 'Product Deleted Successfully',
+          };
+        } else {
+          return {
+            statusCode: HttpStatus.EXPECTATION_FAILED,
+            message: 'Product Deletion failed',
+          };
         }
       }
-      }
-    } catch(error) {
+    } catch (error) {
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: error,
-      }
+      };
     }
   }
 
   async updateMerchantProduct(req: productDto, image) {
-    try{
-      const findProduct = await this.productModel.findOne({_id: req._id});
-      if(findProduct) {
+    try {
+      const findProduct = await this.productModel.findOne({ _id: req._id });
+      if (findProduct) {
         if (image) {
           const reqDoc = image.map((doc, index) => {
             let IsPrimary = false;
@@ -142,232 +143,310 @@ export class ProductService {
 
           req.productImage = reqDoc.toString();
         }
-        if(req.productImage) {
-          const updateprod = await this.productModel.updateOne({_id: req._id},{
-            $set: {
-              productName: req.productName,
-              productSpecifications: req.productSpecifications,
-              productImage: req.productImage,
-            }
-          });
-          if(updateprod) {
+        if (req.productImage) {
+          const updateprod = await this.productModel.updateOne(
+            { _id: req._id },
+            {
+              $set: {
+                productName: req.productName,
+                productSpecifications: req.productSpecifications,
+                productImage: req.productImage,
+              },
+            },
+          );
+          if (updateprod) {
             return {
               statusCode: HttpStatus.OK,
-              message: "Product updated successfully",
+              message: 'Product updated successfully',
               data: updateprod,
-            }
+            };
           } else {
             return {
               statusCode: HttpStatus.EXPECTATION_FAILED,
-              message: "Product updation failed",
-            }
+              message: 'Product updation failed',
+            };
           }
         } else {
-          const updateprod = await this.productModel.updateOne({_id: req._id},{
-            $set: {
-              productName: req.productName,
-              productSpecifications: req.productSpecifications
-            }
-          });
-          if(updateprod) {
+          const updateprod = await this.productModel.updateOne(
+            { _id: req._id },
+            {
+              $set: {
+                productName: req.productName,
+                productSpecifications: req.productSpecifications,
+              },
+            },
+          );
+          if (updateprod) {
             return {
               statusCode: HttpStatus.OK,
-              message: "Product updated successfully",
+              message: 'Product updated successfully',
               data: updateprod,
-            }
+            };
           } else {
             return {
               statusCode: HttpStatus.EXPECTATION_FAILED,
-              message: "Product updation failed",
-            }
+              message: 'Product updation failed',
+            };
           }
         }
       } else {
         return {
           statusCode: HttpStatus.NOT_FOUND,
-          message: "Product not found",
-        }
+          message: 'Product not found',
+        };
       }
-    } catch(error) {
+    } catch (error) {
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: error,
-      }
+      };
     }
   }
 
   async addMerchantProd(req: merchantProductDto) {
-    try{
-      const findUser = await this.userModel.findOne({userId: req.userId});
-      const findAdminProduct = await this.productModel.findOne({adminProductId: req.adminProductId});
-      const findExisted = await this.merchantProductModel.findOne({$and: [{userId: req.userId},{adminProductId: req.adminProductId}]});
-      if(!findUser) {
+    try {
+      const findUser = await this.userModel.findOne({ userId: req.userId });
+      const findAdminProduct = await this.productModel.findOne({
+        adminProductId: req.adminProductId,
+      });
+      const findExisted = await this.merchantProductModel.findOne({
+        $and: [{ userId: req.userId }, { adminProductId: req.adminProductId }],
+      });
+      if (!findUser) {
         return {
           statusCode: HttpStatus.NOT_FOUND,
-          message: "User not found.",
-        }
+          message: 'User not found.',
+        };
       }
-      if(!findAdminProduct) {
+      if (!findAdminProduct) {
         return {
           statusCode: HttpStatus.NOT_FOUND,
-          message: "Product not found.",
-        }
+          message: 'Product not found.',
+        };
       }
-      if(findExisted) {
+      if (findExisted) {
         return {
           statusCode: HttpStatus.CONFLICT,
-          message: "Product Already added to user",
-        }
+          message: 'Product Already added to user',
+        };
       }
       const addProd = await this.merchantProductModel.create(req);
-      if(addProd) {
+      if (addProd) {
         const findProduct = await this.merchantProductModel.aggregate([
-          {$match: {_id: addProd._id}},
+          { $match: { _id: addProd._id } },
           {
             $lookup: {
-              from: "products",
-              localField: "adminProductId",
-              foreignField: "adminProductId",
-              as: "adminProductId",
-            }
-          }
+              from: 'products',
+              localField: 'adminProductId',
+              foreignField: 'adminProductId',
+              as: 'adminProductId',
+            },
+          },
         ]);
         return {
           statusCode: HttpStatus.OK,
-          message: "Merchant Product Added Successfully",
+          message: 'Merchant Product Added Successfully',
           data: findProduct,
-        }
+        };
       }
-    } catch(error) {
+    } catch (error) {
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: error
-      }
+        message: error,
+      };
     }
   }
 
   async getMerchantProds(req: merchantProductDto) {
-    try{
+    try {
       const getProds = await this.merchantProductModel.aggregate([
-        {$match: {userId: req.userId}},
+        { $match: { userId: req.userId } },
         {
           $lookup: {
-            from: "products",
-            localField: "adminProductId",
-            foreignField: "adminProductId",
-            as: "adminProductId"
-          }
-        }
+            from: 'products',
+            localField: 'adminProductId',
+            foreignField: 'adminProductId',
+            as: 'adminProductId',
+          },
+        },
       ]);
-      if(getProds.length > 0) {
+      if (getProds.length > 0) {
         return {
           statusCode: HttpStatus.OK,
-          message: "List of Merchant Products",
+          message: 'List of Merchant Products',
           data: getProds,
-        }
+        };
       } else {
         return {
           statusCode: HttpStatus.NOT_FOUND,
-          message:"Products not found for this merchant",
-        }
+          message: 'Products not found for this merchant',
+        };
       }
-    } catch(error) {
+    } catch (error) {
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: error,
-      }
+      };
     }
   }
 
   async getMerchantProdById(req: merchantProductDto) {
-    try{
-      const findProd = await this.merchantProductModel.findOne({_id: req._id});
-      if(!findProd) {
+    try {
+      const findProd = await this.merchantProductModel.findOne({
+        _id: req._id,
+      });
+      if (!findProd) {
         return {
           statusCode: HttpStatus.NOT_FOUND,
-          message: "Product Not Found",
-        }
+          message: 'Product Not Found',
+        };
       }
       const getProdById = await this.merchantProductModel.aggregate([
-        {$match: {_id: findProd._id}},
+        { $match: { _id: findProd._id } },
         {
           $lookup: {
-            from: "products",
-            localField: "adminProductId",
-            foreignField: "adminProductId",
-            as: "adminProductId",
-          }
+            from: 'products',
+            localField: 'adminProductId',
+            foreignField: 'adminProductId',
+            as: 'adminProductId',
+          },
         },
         {
           $lookup: {
-            from: "users",
-            localField: "userId",
-            foreignField: "userId",
-            as: "userId",
-          }
-        }
+            from: 'users',
+            localField: 'userId',
+            foreignField: 'userId',
+            as: 'userId',
+          },
+        },
       ]);
-      console.log("jsd",findProd);
-      if(getProdById) {
+      console.log('jsd', findProd);
+      if (getProdById) {
         return {
           statusCode: HttpStatus.OK,
-          message: "Details of Merchant Product",
+          message: 'Details of Merchant Product',
           data: getProdById,
-        }
+        };
       } else {
         return {
           statusCode: HttpStatus.NOT_FOUND,
-          message: "Product Details Not Found",
-        }
+          message: 'Product Details Not Found',
+        };
       }
-    } catch(error) {
-      return{
+    } catch (error) {
+      return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: error
-      }
+        message: error,
+      };
     }
   }
 
   async editMerchantProduct(req: merchantProductDto) {
-    try{
-      const editProd = await this.merchantProductModel.updateOne({_id: req._id}, {
-        $set: {price: req.price}
-      });
-      if(editProd) {
+    try {
+      const editProd = await this.merchantProductModel.updateOne(
+        { _id: req._id },
+        {
+          $set: { price: req.price },
+        },
+      );
+      if (editProd) {
         return {
           statusCode: HttpStatus.OK,
-          message: "Merchant Product Updated Successfully",
+          message: 'Merchant Product Updated Successfully',
           data: editProd,
-        }
+        };
       }
-    } catch(error) {
+    } catch (error) {
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: error
-      }
+        message: error,
+      };
     }
   }
 
   async deleteMerchantProduct(req: merchantProductDto) {
-    try{
-      const deleteProd = await this.merchantProductModel.deleteOne({_id: req._id});
-      if(deleteProd) {
+    try {
+      const deleteProd = await this.merchantProductModel.deleteOne({
+        _id: req._id,
+      });
+      if (deleteProd) {
         return {
           statusCode: HttpStatus.OK,
-          message: "Product Deleted Successfully",
-          data: deleteProd
-        }
+          message: 'Product Deleted Successfully',
+          data: deleteProd,
+        };
       } else {
         return {
           statusCode: HttpStatus.BAD_REQUEST,
-          mesage: "Product deletion failed",
-        }
+          mesage: 'Product deletion failed',
+        };
       }
-    } catch(error) {
+    } catch (error) {
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: error,
-      }
+      };
     }
+  }
+
+  async searchProductsByLocation(req: merchantProductDto) {
+    try {
+      const findAdminProducts = await this.productModel.find({
+        productName: { $regex: new RegExp(req.productName, 'i') },
+      });
+      console.log("AdminProducts",findAdminProducts)
+      let merprods = [];
+      const merchantProducts = await Promise.all(findAdminProducts.map(async(product) => {
+        const filterProduct = await this.merchantProductModel.find({adminProductId: product.adminProductId});
+        if(filterProduct.length > 0) {
+            merprods.push(filterProduct);
+        }
+    }));
+      console.log("merprods", merprods);
+      const searchproduct = await this.merchantProductModel.find({});
+      // const vendorsWithinRadius = await this.filterVendorsWithinRadius(
+      //   req.latitude,
+      //   req.longitude,
+      //   vendors,
+      // );
+    } catch (error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error,
+      };
+    }
+  }
+
+  // Function to calculate distance between two coordinates using Haversine formula
+  async calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Radius of the Earth in kilometers
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c; // Distance in kilometers
+    return distance;
+  }
+
+  // Function to filter vendors within 20km radius
+  async filterVendorsWithinRadius(userLat, userLon, vendors) {
+    const vendorsWithinRadius = [];
+    vendors.forEach(async (vendor) => {
+      const distance = await this.calculateDistance(
+        userLat,
+        userLon,
+        vendor.latitude,
+        vendor.longitude,
+      );
+      if (distance <= 20) {
+        vendorsWithinRadius.push(vendor);
+      }
+    });
+    return vendorsWithinRadius;
   }
 }
