@@ -35,4 +35,6 @@ export class userDto{
     latitude: number
     @ApiProperty()
     longitude: number
+    @ApiProperty()
+    coordinates: [number];
 }

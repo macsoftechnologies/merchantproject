@@ -5,10 +5,18 @@ import { Document } from "mongoose";
 export class Advertisement extends Document{
     @Prop()
     advertisement: []
-    @Prop()
-    latitude: string
-    @Prop()
-    longitude: string
+    @Prop({ 
+        type: {
+            type: String,
+            enum: ['Point'],
+            default: 'Point'
+        },
+        coordinates: {
+            type: [Number], // Define coordinates as an array of numbers
+            index: '2dsphere' // Define 2dsphere index on coordinates
+        }
+    })
+    coordinates: [number];
     @Prop()
     radius: number
 }

@@ -100,8 +100,10 @@ export class UserService {
           shopName: req.shopName,
           shopLocation: req.shopLocation,
           role: Role.MERCHANT,
-          latitude: req.latitude,
-          longitude: req.longitude
+          coordinates: {
+            type: "Point",
+            coordinates: [req.longitude, req.latitude]
+          }
         });
         if (createMerchant) {
           return {
@@ -187,8 +189,10 @@ export class UserService {
           shopName: '',
           shopLocation: '',
           role: Role.CUSTOMER,
-          latitude: req.latitude,
-          longitude: req.longitude
+          coordinates: {
+            type: "Point",
+            coordinates: [req.longitude, req.latitude]
+          }
         });
         if (createCustomer) {
           return {
@@ -522,6 +526,10 @@ export class UserService {
               shopLocation: req.shopLocation,
               shopImage: req.shopImage,
               shopLicense: req.shopLicense,
+              coordinates: {
+                longitude: req.longitude,
+                latitude: req.latitude
+              }
             },
           },
         );

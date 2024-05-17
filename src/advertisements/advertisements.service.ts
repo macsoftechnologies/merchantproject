@@ -12,7 +12,7 @@ export class AdvertisementsService {
   ) {}
 
   async addAdvertisement(req: advertisementDto, image) {
-    try{
+    try {
       if (image) {
         const reqDoc = image.map((doc, index) => {
           let IsPrimary = false;
@@ -25,71 +25,126 @@ export class AdvertisementsService {
 
         req.advertisement = reqDoc;
       }
-      console.log(req.advertisement);
-      const createAdd = await this.advertisementModel.create(req);
-      if(createAdd) {
+      const createAdd = await this.advertisementModel.create({
+        advertisement: req.advertisement,
+        radius: req.radius,
+        coordinates: {
+          type: 'Point',
+          coordinates: [req.longitude, req.latitude],
+        },
+      });
+      if (createAdd) {
         return {
           statusCode: HttpStatus.OK,
-          message: "Advertisement added successfully",
-          data: createAdd
-        }
+          message: 'Advertisement added successfully',
+          data: createAdd,
+        };
       } else {
         return {
           statusCode: HttpStatus.BAD_REQUEST,
-          message: "Advertisement not added successfully",
-        }
+          message: 'Advertisement not added successfully',
+        };
       }
-    } catch(error) {
+    } catch (error) {
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: error,
-      }
+      };
     }
   }
 
   async getAdvertisements() {
-    try{
+    try {
       const getads = await this.advertisementModel.find();
-      if(getads.length > 0) {
+      if (getads.length > 0) {
         return {
           statusCode: HttpStatus.OK,
-          message: "List of advertisements",
-          data: getads
-        }
+          message: 'List of advertisements',
+          data: getads,
+        };
       } else {
         return {
           statusCode: HttpStatus.NOT_FOUND,
-          message: "Advertisements not found"
-        }
+          message: 'Advertisements not found',
+        };
       }
-    } catch(error) {
+    } catch (error) {
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: error,
-      }
+      };
     }
   }
 
   async getAdvertisementById(req: advertisementDto) {
-    try{
-      const getads = await this.advertisementModel.findOne({_id: req._id});
-      if(getads) {
+    try {
+      const getads = await this.advertisementModel.findOne({ _id: req._id });
+      if (getads) {
         return {
           statusCode: HttpStatus.OK,
-          message: "Advertisement Details",
-          data: getads
+          message: 'Advertisement Details',
+          data: getads,
+        };
+      } else {
+        return {
+          statusCode: HttpStatus.NOT_FOUND,
+          message: 'Advertisement not found',
+        };
+      }
+    } catch (error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error,
+      };
+    }
+  }
+
+  async getAdvertisementByLocation(req: advertisementDto) {
+    try {
+      const { longitude, latitude } = req;
+      const getads = await this.advertisementModel.find();
+      const filteredAds = getads.filter((ad) => {
+        const adLocation = ad.coordinates;
+        const distance = this.calculateDistance(adLocation, {
+          type: 'Point',
+          coordinates: [longitude, latitude],
+        });
+        return distance <= ad.radius * 1000;
+      });
+      if(filteredAds.length > 0) {
+        return {
+          statusCode: HttpStatus.OK,
+          message: "List of advertisements",
+          data: filteredAds
         }
       } else {
         return {
           statusCode: HttpStatus.NOT_FOUND,
-          message: "Advertisement not found"
+          message: "Advertisements not found on this location."
         }
       }
-    } catch(error) {
+    } catch (error) {
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: error,
-      }
+      };
     }
+  }
+  calculateDistance(point1, point2) {
+    const earthRadius = 6371e3; // Earth's radius in meters
+    const [lon1, lat1] = point1.coordinates;
+    const [lon2, lat2] = point2.coordinates;
+    const φ1 = (lat1 * Math.PI) / 180;
+    const φ2 = (lat2 * Math.PI) / 180;
+    const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+    const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+    const a =
+      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    const distance = earthRadius * c;
+    return distance;
   }
 }

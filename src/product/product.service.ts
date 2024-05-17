@@ -7,6 +7,7 @@ import { productDto } from './dto/product.dto';
 import { Role } from 'src/auth/guards/roles.enum';
 import { merchantProductDto } from './dto/merchantproduct.dto';
 import { MerchantProduct } from './schema/merchantproduct.schema';
+import { MapmyIndiaSDK } from 'mapmyindia-sdk-nodejs';
 
 @Injectable()
 export class ProductService {
@@ -378,7 +379,7 @@ export class ProductService {
       } else {
         return {
           statusCode: HttpStatus.BAD_REQUEST,
-          mesage: 'Product deletion failed',
+          message: 'Product deletion failed',
         };
       }
     } catch (error) {
@@ -391,62 +392,75 @@ export class ProductService {
 
   async searchProductsByLocation(req: merchantProductDto) {
     try {
+      const { longitude, latitude } = req;
+      const getUsers = await this.userModel.find({
+        $and: [
+          {
+            coordinates: {
+              $nearSphere: {
+                $geometry: {
+                  type: 'Point',
+                  coordinates: [longitude, latitude], // Ensure that coordinates are in the correct order (longitude, latitude)
+                },
+                $maxDistance: 20000, // Adjust the maximum distance as needed
+              },
+            },
+          },
+          { role: { $elemMatch: { $eq: "merchant" } } },
+        ],
+      });
+      const userIds = getUsers.map((user) => user.userId);
       const findAdminProducts = await this.productModel.find({
         productName: { $regex: new RegExp(req.productName, 'i') },
       });
-      console.log("AdminProducts",findAdminProducts)
-      let merprods = [];
-      const merchantProducts = await Promise.all(findAdminProducts.map(async(product) => {
-        const filterProduct = await this.merchantProductModel.find({adminProductId: product.adminProductId});
-        if(filterProduct.length > 0) {
-            merprods.push(filterProduct);
-        }
-    }));
-      console.log("merprods", merprods);
-      const searchproduct = await this.merchantProductModel.find({});
-      // const vendorsWithinRadius = await this.filterVendorsWithinRadius(
-      //   req.latitude,
-      //   req.longitude,
-      //   vendors,
-      // );
+      const merchantProds = await Promise.all(
+        findAdminProducts.map(async (product) => {
+          const matchedProduct = await this.merchantProductModel.aggregate([
+            {
+              $match: { adminProductId: product.adminProductId }
+            },
+            {
+              $lookup: {
+                from: "users",
+                localField: "userId",
+                foreignField: "userId",
+                as: "userId",
+              }
+            },
+            {
+              $lookup: {
+                from: "products",
+                localField: "adminProductId",
+                foreignField: "adminProductId",
+                as: "adminProductId",
+              }
+            }
+          ]);
+          return matchedProduct;
+        })
+      );
+      const flattenedMerchantProds = merchantProds.flat();
+      const filteredMerchantProds = flattenedMerchantProds.filter((product) =>
+        userIds.includes(product.userId[0].userId)
+      );
+  
+      if (filteredMerchantProds.length > 0) {
+        return {
+          statusCode: HttpStatus.OK,
+          message: 'List of searched products',
+          data: filteredMerchantProds,
+        };
+      } else {
+        return {
+          statusCode: HttpStatus.NOT_FOUND,
+          message: 'Search products not found',
+        };
+      }
     } catch (error) {
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: error,
       };
     }
-  }
-
-  // Function to calculate distance between two coordinates using Haversine formula
-  async calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371; // Radius of the Earth in kilometers
-    const dLat = ((lat2 - lat1) * Math.PI) / 180;
-    const dLon = ((lon2 - lon1) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distance = R * c; // Distance in kilometers
-    return distance;
-  }
-
-  // Function to filter vendors within 20km radius
-  async filterVendorsWithinRadius(userLat, userLon, vendors) {
-    const vendorsWithinRadius = [];
-    vendors.forEach(async (vendor) => {
-      const distance = await this.calculateDistance(
-        userLat,
-        userLon,
-        vendor.latitude,
-        vendor.longitude,
-      );
-      if (distance <= 20) {
-        vendorsWithinRadius.push(vendor);
-      }
-    });
-    return vendorsWithinRadius;
   }
 }

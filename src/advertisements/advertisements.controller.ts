@@ -71,4 +71,18 @@ export class AdvertisementsController {
       }
     }
   }
+
+  @UseGuards(JwtGuard)
+  @Post('/getadsbylocation')
+  async getAdsByLocation(@Body() req: advertisementDto) {
+    try{
+      const getads = await this.advertisementsService.getAdvertisementByLocation(req);
+      return getads
+    } catch(error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error,
+      }
+    }
+  }
 }

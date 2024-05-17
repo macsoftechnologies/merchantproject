@@ -10,5 +10,7 @@ export class advertisementDto{
     @ApiProperty()
     longitude: string
     @ApiProperty()
+    coordinates: [number];
+    @ApiProperty()
     radius: number
 }
