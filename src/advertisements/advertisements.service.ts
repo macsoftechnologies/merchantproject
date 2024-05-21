@@ -112,10 +112,13 @@ export class AdvertisementsService {
         return distance <= ad.radius * 1000;
       });
       if(filteredAds.length > 0) {
+        const allAdvertisements = filteredAds.reduce((acc, ad) => {
+          return acc.concat(ad.advertisement);
+        }, []);
         return {
           statusCode: HttpStatus.OK,
           message: "List of advertisements",
-          data: filteredAds
+          data: allAdvertisements
         }
       } else {
         return {
