@@ -145,8 +145,7 @@ export class UserController {
     }
   }
 
-  @UseGuards(JwtGuard, RolesGuard)
-  @Roles(Role.MERCHANT, Role.CUSTOMER)
+  @UseGuards(JwtGuard)
   @Post('/updateuser')
   @UseInterceptors(
     FileFieldsInterceptor([
