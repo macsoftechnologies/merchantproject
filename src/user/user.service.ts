@@ -527,8 +527,8 @@ export class UserService {
               shopImage: req.shopImage,
               shopLicense: req.shopLicense,
               coordinates: {
-                longitude: req.longitude,
-                latitude: req.latitude
+                type: "Point",
+                coordinates: [req.longitude, req.latitude]
               }
             },
           },
