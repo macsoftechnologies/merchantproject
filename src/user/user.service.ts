@@ -484,81 +484,81 @@ export class UserService {
   async updateUser(req: userDto, image) {
     try {
       const findUser = await this.userModel.findOne({ _id: req._id });
-      if (findUser) {
-        if (image) {
-          if (image.profileImage && image.profileImage[0]) {
-            const attachmentFile = await this.authService.saveFile(
-              image.profileImage[0],
-            );
-            req.profileImage = attachmentFile;
-          }
-          if (image.shopImage && image.shopImage[0]) {
-            const attachmentFile = await this.authService.saveFile(
-              image.shopImage[0],
-            );
-
-            req.shopImage = attachmentFile;
-          }
-          if (image.shopLicense && image.shopLicense[0]) {
-            const attachmentFile = await this.authService.saveFile(
-              image.shopLicense[0],
-            );
-
-            req.shopLicense = attachmentFile;
-          }
-        }
-        let bcryptPassword;
-        if(req.password) {
-          bcryptPassword = await this.authService.hashPassword(req.password);
-        }
-        const modifyUser = await this.userModel.updateOne(
-          { _id: req._id },
-          {
-            $set: {
-              userName: req.userName,
-              email: req.email,
-              password: bcryptPassword,
-              address: req.address,
-              profileImage: req.profileImage,
-              mobileNumber: req.mobileNumber,
-              altMobileNumber: req.altMobileNumber,
-              shopName: req.shopName,
-              shopLocation: req.shopLocation,
-              shopImage: req.shopImage,
-              shopLicense: req.shopLicense,
-              coordinates: {
-                type: "Point",
-                coordinates: [req.longitude, req.latitude]
-              }
-            },
-          },
-        );
-        if(modifyUser) {
-          return {
-            statusCode: HttpStatus.OK,
-            message: "User updated successfully",
-            data: modifyUser,
-          }
-        } else {
-          return {
-            statusCode: HttpStatus.EXPECTATION_FAILED,
-            message: "User updation failed",
-          }
-        }
-      } else {
+      if (!findUser) {
         return {
           statusCode: HttpStatus.NOT_FOUND,
           message: 'User not found',
         };
       }
+  
+      // Process images if provided
+      if (image) {
+        if (image.profileImage && image.profileImage[0]) {
+          const attachmentFile = await this.authService.saveFile(image.profileImage[0]);
+          req.profileImage = attachmentFile;
+        }
+        if (image.shopImage && image.shopImage[0]) {
+          const attachmentFile = await this.authService.saveFile(image.shopImage[0]);
+          req.shopImage = attachmentFile;
+        }
+        if (image.shopLicense && image.shopLicense[0]) {
+          const attachmentFile = await this.authService.saveFile(image.shopLicense[0]);
+          req.shopLicense = attachmentFile;
+        }
+      }
+  
+      let bcryptPassword = findUser.password;
+      if (req.password) {
+        bcryptPassword = await this.authService.hashPassword(req.password);
+      }
+  
+      const updateData: any = {
+        userName: req.userName,
+        email: req.email,
+        password: bcryptPassword,
+        address: req.address,
+        profileImage: req.profileImage,
+        mobileNumber: req.mobileNumber,
+        altMobileNumber: req.altMobileNumber,
+        shopName: req.shopName,
+        shopLocation: req.shopLocation,
+        shopImage: req.shopImage,
+        shopLicense: req.shopLicense,
+      };
+  
+      if (req.longitude !== undefined && req.latitude !== undefined) {
+        updateData.coordinates = {
+          type: "Point",
+          coordinates: [req.longitude, req.latitude],
+        };
+      }
+  
+      const modifyUser = await this.userModel.updateOne(
+        { _id: req._id },
+        { $set: updateData },
+      );
+  
+      if (modifyUser.modifiedCount > 0) {
+        return {
+          statusCode: HttpStatus.OK,
+          message: "User updated successfully",
+          data: modifyUser,
+        };
+      } else {
+        return {
+          statusCode: HttpStatus.EXPECTATION_FAILED,
+          message: "User update failed",
+        };
+      }
     } catch (error) {
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: error,
+        message: error.message || error,
       };
     }
   }
   
+ 
   async deleteUser(req: userDto) {
     try{
       const findUser = await this.userModel.findOne({_id: req._id});
