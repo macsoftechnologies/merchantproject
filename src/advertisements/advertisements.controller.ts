@@ -85,4 +85,18 @@ export class AdvertisementsController {
       }
     }
   }
+
+  @UseGuards(JwtGuard, RolesGuard)
+  @Post('/deleteadvertisement')
+  async delAdvertisement(@Body() req: advertisementDto) {
+    try{
+      const removeAd = await this.advertisementsService.deleteAdvertisement(req);
+      return removeAd
+    } catch(error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error,
+      }
+    }
+  }
 }

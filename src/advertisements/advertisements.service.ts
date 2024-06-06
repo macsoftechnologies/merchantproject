@@ -150,4 +150,29 @@ export class AdvertisementsService {
     const distance = earthRadius * c;
     return distance;
   }
+
+  async deleteAdvertisement(req: advertisementDto) {
+    try{
+      const findAd = await this.advertisementModel.findOne({_id: req._id});
+      if(!findAd) {
+        return {
+          statusCode: HttpStatus.NOT_FOUND,
+          message: "Advertisement Not Found",
+        }
+      }
+      const removeAd = await this.advertisementModel.deleteOne({_id: req._id});
+      if(removeAd) {
+        return {
+          statusCode: HttpStatus.OK,
+          message: "Advertisement Deleted Successfully",
+          data: removeAd,
+        }
+      }
+    } catch(error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error,
+      }
+    }
+  }
 }
