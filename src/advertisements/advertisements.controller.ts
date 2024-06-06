@@ -87,6 +87,7 @@ export class AdvertisementsController {
   }
 
   @UseGuards(JwtGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @Post('/deleteadvertisement')
   async delAdvertisement(@Body() req: advertisementDto) {
     try{
