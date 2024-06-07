@@ -151,6 +151,69 @@ export class AdvertisementsService {
     return distance;
   }
 
+  async editAdvertisement(req: advertisementDto, image) {
+    try {
+      const findAd = await this.advertisementModel.findOne({ _id: req._id });
+      if (!findAd) {
+        return {
+          statusCode: HttpStatus.NOT_FOUND,
+          message: 'Advertisement not found',
+        };
+      }
+  
+      const updateData: any = {
+        radius: req.radius,
+      };
+
+      if(req.advertisement || image) {
+        // Process images if provided
+      if (image) {
+        const reqDoc = image.map((doc, index) => {
+          let IsPrimary = false;
+          if (index == 0) {
+            IsPrimary = true;
+          }
+          const randomNumber = Math.floor(Math.random() * 1000000 + 1);
+          return doc.filename;
+        });
+
+        req.advertisement = reqDoc;
+      }
+        updateData.advertisement = req.advertisement
+      }
+  
+      if (req.longitude !== undefined && req.latitude !== undefined) {
+        updateData.coordinates = {
+          type: "Point",
+          coordinates: [req.longitude, req.latitude],
+        };
+      }
+  
+      const modifyAd = await this.advertisementModel.updateOne(
+        { _id: req._id },
+        { $set: updateData },
+      );
+  
+      if (modifyAd.modifiedCount > 0) {
+        return {
+          statusCode: HttpStatus.OK,
+          message: "Advertisement updated successfully",
+          data: modifyAd,
+        };
+      } else {
+        return {
+          statusCode: HttpStatus.EXPECTATION_FAILED,
+          message: "Advertisement update failed",
+        };
+      }
+    } catch(error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error,
+      }
+    }
+  }
+
   async deleteAdvertisement(req: advertisementDto) {
     try{
       const findAd = await this.advertisementModel.findOne({_id: req._id});

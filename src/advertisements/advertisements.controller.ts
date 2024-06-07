@@ -88,6 +88,35 @@ export class AdvertisementsController {
 
   @UseGuards(JwtGuard, RolesGuard)
   @Roles(Role.ADMIN)
+  @Post('/editadvertisement')
+  @UseInterceptors(
+    AnyFilesInterceptor({
+      storage: diskStorage({
+        destination: './files',
+        filename: (req, file, cb) => {
+          const randomName = Array(32)
+            .fill(null)
+            .map(() => Math.round(Math.random() * 16).toString(16))
+            .join('');
+          cb(null, `${randomName}${extname(file.originalname)}`);
+        },
+      }),
+    }),
+  )
+  async editAdvertisement(@Body() req: advertisementDto, @UploadedFiles() image) {
+    try{
+      const editAd = await this.advertisementsService.editAdvertisement(req, image);
+      return editAd
+    } catch(error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error,
+      }
+    }
+  }
+
+  @UseGuards(JwtGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @Post('/deleteadvertisement')
   async delAdvertisement(@Body() req: advertisementDto) {
     try{
