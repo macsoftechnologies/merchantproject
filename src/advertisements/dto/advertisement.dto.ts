@@ -13,4 +13,6 @@ export class advertisementDto{
     coordinates: [number];
     @ApiProperty()
     radius: number
+    @ApiProperty()
+    removeFile: []
 }

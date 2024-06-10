@@ -192,6 +192,7 @@ export class AdvertisementsService {
       const modifyAd = await this.advertisementModel.updateOne(
         { _id: req._id },
         { $set: updateData },
+        { $pull: { advertisement: req.removeFile } }
       );
   
       if (modifyAd.modifiedCount > 0) {
@@ -236,6 +237,24 @@ export class AdvertisementsService {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: error,
       }
+    }
+  }
+
+  async deleteAdvertisementFile(req: advertisementDto) {
+    try {
+      const removeAdvertiseFile = await this.advertisementModel.updateOne(
+        { _id: req._id },
+        { $pull: { advertisement: req.advertisement } },
+      );
+      return {
+        statusCode: HttpStatus.OK,
+        removeImg: removeAdvertiseFile,
+      };
+    } catch (error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        msg: error,
+      };
     }
   }
 }

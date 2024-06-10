@@ -129,4 +129,19 @@ export class AdvertisementsController {
       }
     }
   }
+
+  @UseGuards(JwtGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @Post('/deleteadvertisementfile')
+  async delAdvertisementFile(@Body() req: advertisementDto) {
+    try{
+      const removeAdFile = await this.advertisementsService.deleteAdvertisementFile(req);
+      return removeAdFile
+    } catch(error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error,
+      }
+    }
+  }
 }
