@@ -182,13 +182,6 @@ export class AdvertisementsService {
         updateData.advertisement = req.advertisement;
       }
 
-      if (req.removeFile) {
-        const removeAdFile = await this.advertisementModel.updateOne(
-          { _id: req._id },
-          { $pull: { advertisement: req.removeFile }}
-        );
-      }
-
       if (req.longitude !== undefined && req.latitude !== undefined) {
         updateData.coordinates = {
           type: 'Point',
