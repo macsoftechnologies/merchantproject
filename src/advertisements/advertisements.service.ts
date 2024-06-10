@@ -111,20 +111,20 @@ export class AdvertisementsService {
         });
         return distance <= ad.radius * 1000;
       });
-      if(filteredAds.length > 0) {
+      if (filteredAds.length > 0) {
         const allAdvertisements = filteredAds.reduce((acc, ad) => {
           return acc.concat(ad.advertisement);
         }, []);
         return {
           statusCode: HttpStatus.OK,
-          message: "List of advertisements",
-          data: allAdvertisements
-        }
+          message: 'List of advertisements',
+          data: allAdvertisements,
+        };
       } else {
         return {
           statusCode: HttpStatus.NOT_FOUND,
-          message: "Advertisements not found on this location."
-        }
+          message: 'Advertisements not found on this location.',
+        };
       }
     } catch (error) {
       return {
@@ -160,83 +160,98 @@ export class AdvertisementsService {
           message: 'Advertisement not found',
         };
       }
-  
+
       const updateData: any = {
         radius: req.radius,
       };
 
-      if(req.advertisement || image) {
-        // Process images if provided
-      if (image) {
-        const reqDoc = image.map((doc, index) => {
-          let IsPrimary = false;
-          if (index == 0) {
-            IsPrimary = true;
-          }
-          const randomNumber = Math.floor(Math.random() * 1000000 + 1);
-          return doc.filename;
-        });
+      // if(req.advertisement || image) {
+      //   // Process images if provided
 
-        req.advertisement = reqDoc;
+      //   updateData.advertisement = req.advertisement
+      // }
+
+      if (req.advertisement) {
+        if (image) {
+          const reqDoc = image.map((doc, index) => {
+            let IsPrimary = false;
+            if (index == 0) {
+              IsPrimary = true;
+            }
+            const randomNumber = Math.floor(Math.random() * 1000000 + 1);
+            return doc.filename;
+          });
+
+          req.advertisement = reqDoc;
+        }
+        updateData.advertisement = req.advertisement;
       }
-        updateData.advertisement = req.advertisement
+
+      if (req.removeFile) {
+        const removeAdFile = await this.advertisementModel.updateOne(
+          { _id: req._id },
+          { $pull: { advertisement: req.removeFile }}
+        );
       }
-  
+
       if (req.longitude !== undefined && req.latitude !== undefined) {
         updateData.coordinates = {
-          type: "Point",
+          type: 'Point',
           coordinates: [req.longitude, req.latitude],
         };
       }
-  
+
+      console.log('updateData', updateData);
+
       const modifyAd = await this.advertisementModel.updateOne(
         { _id: req._id },
         { $set: updateData },
-        { $pull: { advertisement: req.removeFile } }
       );
-  
+
       if (modifyAd.modifiedCount > 0) {
         return {
           statusCode: HttpStatus.OK,
-          message: "Advertisement updated successfully",
+          message: 'Advertisement updated successfully',
           data: modifyAd,
         };
       } else {
         return {
           statusCode: HttpStatus.EXPECTATION_FAILED,
-          message: "Advertisement update failed",
+          message: 'Advertisement update failed',
         };
       }
-    } catch(error) {
+    } catch (error) {
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: error,
-      }
+      };
     }
   }
 
   async deleteAdvertisement(req: advertisementDto) {
-    try{
-      const findAd = await this.advertisementModel.findOne({_id: req._id});
-      if(!findAd) {
+    try {
+      const findAd = await this.advertisementModel.findOne({ _id: req._id });
+      if (!findAd) {
         return {
           statusCode: HttpStatus.NOT_FOUND,
-          message: "Advertisement Not Found",
-        }
+          message: 'Advertisement Not Found',
+        };
       }
-      const removeAd = await this.advertisementModel.deleteOne({_id: req._id});
-      if(removeAd) {
+      const removeAd = await this.advertisementModel.deleteOne({
+        _id: req._id,
+      });
+      if (removeAd) {
         return {
           statusCode: HttpStatus.OK,
-          message: "Advertisement Deleted Successfully",
+          message: 'Advertisement Deleted Successfully',
           data: removeAd,
-        }
+        };
       }
-    } catch(error) {
+    } catch (error) {
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: error,
-      }
+      };
     }
   }
 
