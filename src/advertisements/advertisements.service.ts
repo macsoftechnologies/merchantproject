@@ -165,25 +165,20 @@ export class AdvertisementsService {
         radius: req.radius,
       };
 
-      // if(req.advertisement || image) {
-      //   // Process images if provided
+      if (image) {
+        const reqDoc = image.map((doc, index) => {
+          let IsPrimary = false;
+          if (index == 0) {
+            IsPrimary = true;
+          }
+          const randomNumber = Math.floor(Math.random() * 1000000 + 1);
+          return doc.filename;
+        });
 
-      //   updateData.advertisement = req.advertisement
-      // }
+        req.advertisement = reqDoc;
+      }
 
-      if (req.advertisement) {
-        if (image) {
-          const reqDoc = image.map((doc, index) => {
-            let IsPrimary = false;
-            if (index == 0) {
-              IsPrimary = true;
-            }
-            const randomNumber = Math.floor(Math.random() * 1000000 + 1);
-            return doc.filename;
-          });
-
-          req.advertisement = reqDoc;
-        }
+      if (req.advertisement && req.advertisement.length != 0) {
         updateData.advertisement = req.advertisement;
       }
 
