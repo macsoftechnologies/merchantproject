@@ -29,7 +29,7 @@ async function bootstrap() {
     const httpsOptions = {
       key: fs.readFileSync(process.env.SSL_KEY_PATH),
       cert: fs.readFileSync(process.env.SSL_CERT_PATH),
-      secureOptions: constants.SSL_OP_NO_TLSv1 | constants.SSL_OP_NO_TLSv1_1,
+      secureOptions: 0x00000300 | 0x00000400,
     };
     const server = https.createServer(httpsOptions, app.getHttpAdapter().getInstance());
     await server.listen(port, () => {
