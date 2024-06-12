@@ -7,6 +7,7 @@ import * as express from 'express';
 import * as bodyParser from 'body-parser';
 import * as fs from 'fs';
 import * as https from 'https';
+import { constants } from 'crypto';
 
 async function bootstrap() {
   // Load the correct environment file
@@ -28,6 +29,7 @@ async function bootstrap() {
     const httpsOptions = {
       key: fs.readFileSync(process.env.SSL_KEY_PATH),
       cert: fs.readFileSync(process.env.SSL_CERT_PATH),
+      secureOptions: constants.SSL_OP_NO_TLSv1 | constants.SSL_OP_NO_TLSv1_1,
     };
     const server = https.createServer(httpsOptions, app.getHttpAdapter().getInstance());
     await server.listen(port, () => {
