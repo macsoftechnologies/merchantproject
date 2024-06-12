@@ -13,7 +13,6 @@ import { ProductModule } from './product/product.module';
 import { AdvertisementsModule } from './advertisements/advertisements.module';
 // const mongoURI = process.env.MONGO_URI;
 const mongoURI =
-  process.env.MONGO_URI ||
   'mongodb+srv://macsof:macsof@nextlevelcarwash.yjs3i.mongodb.net/Merchant?retryWrites=true&w=majority';
 
 @Module({
