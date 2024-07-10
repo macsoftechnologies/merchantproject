@@ -98,6 +98,31 @@ export class ProductService {
     }
   }
 
+  async searchAdminProducts(req: productDto) {
+    try {
+      const searchProds = await this.productModel.find({
+        productName: { $regex: new RegExp(req.productName, 'i') },
+      });
+      if(searchProds.length > 0) {
+        return {
+          statusCode: HttpStatus.OK,
+          message: "Searched Products",
+          data: searchProds,
+        }
+      } else {
+        return {
+          statusCode: HttpStatus.NOT_FOUND,
+          message: "Products not found by search",
+        }
+      }
+    } catch (error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error,
+      };
+    }
+  }
+
   async deleteMerchantProd(req: productDto) {
     try {
       const findProduct = await this.productModel.findOne({ _id: req._id });
@@ -406,7 +431,7 @@ export class ProductService {
               },
             },
           },
-          { role: { $elemMatch: { $eq: "merchant" } } },
+          { role: { $elemMatch: { $eq: 'merchant' } } },
         ],
       });
       const userIds = getUsers.map((user) => user.userId);
@@ -417,33 +442,33 @@ export class ProductService {
         findAdminProducts.map(async (product) => {
           const matchedProduct = await this.merchantProductModel.aggregate([
             {
-              $match: { adminProductId: product.adminProductId }
+              $match: { adminProductId: product.adminProductId },
             },
             {
               $lookup: {
-                from: "users",
-                localField: "userId",
-                foreignField: "userId",
-                as: "userId",
-              }
+                from: 'users',
+                localField: 'userId',
+                foreignField: 'userId',
+                as: 'userId',
+              },
             },
             {
               $lookup: {
-                from: "products",
-                localField: "adminProductId",
-                foreignField: "adminProductId",
-                as: "adminProductId",
-              }
-            }
+                from: 'products',
+                localField: 'adminProductId',
+                foreignField: 'adminProductId',
+                as: 'adminProductId',
+              },
+            },
           ]);
           return matchedProduct;
-        })
+        }),
       );
       const flattenedMerchantProds = merchantProds.flat();
       const filteredMerchantProds = flattenedMerchantProds.filter((product) =>
-        userIds.includes(product.userId[0].userId)
+        userIds.includes(product.userId[0].userId),
       );
-  
+
       if (filteredMerchantProds.length > 0) {
         return {
           statusCode: HttpStatus.OK,

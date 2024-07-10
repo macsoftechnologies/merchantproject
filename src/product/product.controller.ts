@@ -71,6 +71,20 @@ export class ProductController {
     }
   }
 
+  @UseGuards(JwtGuard)
+  @Post('/searchadminproducts')
+  async getSearchProducts(@Body() req: productDto) {
+    try{
+      const productDetails = await this.productService.searchAdminProducts(req);
+      return productDetails
+    } catch(error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error,
+      }
+    }
+  }
+
   @UseGuards(JwtGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @Post('/deleteproduct')
