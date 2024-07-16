@@ -6,25 +6,15 @@ export class userDto{
     @ApiProperty()
     userName: string
     @ApiProperty()
-    email: string
-    @ApiProperty()
-    password: string
-    @ApiProperty()
     address: string
     @ApiProperty()
     profileImage: string
     @ApiProperty()
     mobileNumber: string
     @ApiProperty()
-    altMobileNumber: string
-    @ApiProperty()
     shopName: string
     @ApiProperty()
-    shopLocation: string
-    @ApiProperty()
     shopImage: string
-    @ApiProperty()
-    shopLicense: string
     @ApiProperty()
     role: string[]
     @ApiProperty()
@@ -37,4 +27,6 @@ export class userDto{
     longitude: number
     @ApiProperty()
     coordinates: [number];
+    @ApiProperty()
+    otp: string;
 }

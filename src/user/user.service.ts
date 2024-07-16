@@ -18,7 +18,6 @@ interface UserModel {
   shopName: string;
   shopLocation: string;
   shopImage: string;
-  shopLicense: string;
   role: string[]; // Assuming role is an array of strings
   createdAt: string;
   updatedAt: string;
@@ -52,29 +51,14 @@ export class UserService {
 
             req.shopImage = attachmentFile;
           }
-          if (image.shopLicense && image.shopLicense[0]) {
-            const attachmentFile = await this.authService.saveFile(
-              image.shopLicense[0],
-            );
-
-            req.shopLicense = attachmentFile;
-          }
         } else {
           req.profileImage === "";
           req.shopImage === "";
-          req.shopLicense === "";
         }
-        const bcryptPassword = await this.authService.hashPassword(
-          req.password,
-        );
-        req.password = bcryptPassword;
         if (
           req.shopName === ' ' ||
           req.shopName === '' ||
           !req.shopName ||
-          !req.email ||
-          req.email === '' ||
-          req.email === ' ' ||
           !req.mobileNumber ||
           req.mobileNumber === '' ||
           req.mobileNumber === ' '
@@ -89,17 +73,13 @@ export class UserService {
         }
         const createMerchant = await this.userModel.create({
           userName: req.userName,
-          email: req.email,
-          password: bcryptPassword,
           mobileNumber: req.mobileNumber,
-          altMobileNumber: req.altMobileNumber,
           address: req.address,
           profileImage: req.profileImage,
           shopImage: req.shopImage,
-          shopLicense: req.shopLicense,
           shopName: req.shopName,
-          shopLocation: req.shopLocation,
           role: Role.MERCHANT,
+          otp: '',
           coordinates: {
             type: "Point",
             coordinates: [req.longitude, req.latitude]
@@ -151,22 +131,8 @@ export class UserService {
 
             req.shopImage = attachmentFile;
           }
-          if (image.shopLicense && image.shopLicense[0]) {
-            const attachmentFile = await this.authService.saveFile(
-              image.shopLicense[0],
-            );
-
-            req.shopLicense = attachmentFile;
-          }
         }
-        const bcryptPassword = await this.authService.hashPassword(
-          req.password,
-        );
-        req.password = bcryptPassword;
         if (
-          !req.email ||
-          req.email === '' ||
-          req.email === ' ' ||
           !req.mobileNumber ||
           req.mobileNumber === '' ||
           req.mobileNumber === ' '
@@ -178,17 +144,13 @@ export class UserService {
         }
         const createCustomer = await this.userModel.create({
           userName: req.userName,
-          email: req.email,
-          password: bcryptPassword,
           mobileNumber: req.mobileNumber,
-          altMobileNumber: req.altMobileNumber,
           address: req.address,
           profileImage: req.profileImage,
           shopImage: '',
-          shopLicense: '',
           shopName: '',
-          shopLocation: '',
           role: Role.CUSTOMER,
+          otp: '',
           coordinates: {
             type: "Point",
             coordinates: [req.longitude, req.latitude]
@@ -222,20 +184,20 @@ export class UserService {
 
   async loginUser(req: userDto) {
     try {
-      const findUser = await this.userModel.findOne({
-        $or: [{ email: req.email }, { mobileNumber: req.mobileNumber }],
-      });
+      const findUser = await this.userModel.findOne({mobileNumber: req.mobileNumber});
       if (!findUser) {
         return {
           statusCode: HttpStatus.NOT_FOUND,
           message: 'Admin Not Found',
         };
       } else {
-        const matchPassword = await this.authService.comparePassword(
-          req.password,
-          findUser.password,
-        );
-        if (matchPassword) {
+        // let generatedOtp = Math.floor(1000 + Math.random() * 9000);
+        // const updateOTP = await this.userModel.updateOne({_id: findUser._id},{
+        //   $set: {
+        //     otp: generatedOtp
+        //   }
+        // });
+        if (req.otp === "1234") {
           const jwtToken = await this.authService.createToken({ findUser });
           return {
             statusCode: HttpStatus.OK,
@@ -246,8 +208,8 @@ export class UserService {
         } else {
           return {
             statusCode: HttpStatus.BAD_REQUEST,
-            message: 'Password incorrect',
-          };
+            message: "Invalid OTP"
+          }
         }
       }
     } catch (error) {
@@ -260,9 +222,7 @@ export class UserService {
 
   async switchUser(req: userDto, image) {
     try {
-      const findCustomer: UserModel | null = await this.userModel.findOne({
-        $or: [{ email: req.email }, { mobileNumber: req.mobileNumber }],
-      });
+      const findCustomer: UserModel | null = await this.userModel.findOne({mobileNumber: req.mobileNumber});
       if (findCustomer) {
         const isCustomer = findCustomer.role.includes(Role.CUSTOMER);
         const isMerchant = findCustomer.role.includes(Role.MERCHANT);
@@ -287,24 +247,13 @@ export class UserService {
 
                 req.shopImage = attachmentFile;
               }
-              if (image.shopLicense && image.shopLicense[0]) {
-                const attachmentFile = await this.authService.saveFile(
-                  image.shopLicense[0],
-                );
-
-                req.shopLicense = attachmentFile;
-              }
             }
             const switchToMerchant = await this.userModel.updateOne(
-              {
-                $or: [{ email: req.email }, { mobileNumber: req.mobileNumber }],
-              },
+              {mobileNumber: req.mobileNumber},
               {
                 $set: {
                   shopName: req.shopName,
                   shopImage: req.shopImage,
-                  shopLicense: req.shopLicense,
-                  shopLocation: req.shopLocation,
                 },
                 $push: {
                   role: Role.MERCHANT,
@@ -325,9 +274,7 @@ export class UserService {
           }
         } else if (isMerchant && !isCustomer) {
           const switchToCustomer = await this.userModel.updateOne(
-            {
-              $or: [{ email: req.email }, { mobileNumber: req.mobileNumber }],
-            },
+            {mobileNumber: req.mobileNumber},
             {
               $push: {
                 role: Role.CUSTOMER,
@@ -501,29 +448,15 @@ export class UserService {
           const attachmentFile = await this.authService.saveFile(image.shopImage[0]);
           req.shopImage = attachmentFile;
         }
-        if (image.shopLicense && image.shopLicense[0]) {
-          const attachmentFile = await this.authService.saveFile(image.shopLicense[0]);
-          req.shopLicense = attachmentFile;
-        }
-      }
-  
-      let bcryptPassword = findUser.password;
-      if (req.password) {
-        bcryptPassword = await this.authService.hashPassword(req.password);
       }
   
       const updateData: any = {
         userName: req.userName,
-        email: req.email,
-        password: bcryptPassword,
         address: req.address,
         profileImage: req.profileImage,
         mobileNumber: req.mobileNumber,
-        altMobileNumber: req.altMobileNumber,
         shopName: req.shopName,
-        shopLocation: req.shopLocation,
         shopImage: req.shopImage,
-        shopLicense: req.shopLicense,
       };
   
       if (req.longitude !== undefined && req.latitude !== undefined) {

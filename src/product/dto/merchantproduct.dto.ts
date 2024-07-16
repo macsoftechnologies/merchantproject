@@ -15,4 +15,6 @@ export class merchantProductDto{
     longitude: number
     @ApiProperty()
     productName: string
+    @ApiProperty()
+    categoryId: string
 }

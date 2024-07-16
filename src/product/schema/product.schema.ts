@@ -10,6 +10,8 @@ export class Product extends Document{
     adminProductId: string
     @Prop()
     productName: string
+    @Prop()
+    categoryId: string
     @Prop({trim: true,strict:true,type:specifications})
     productSpecifications: {
         type:any 

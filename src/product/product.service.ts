@@ -8,6 +8,8 @@ import { Role } from 'src/auth/guards/roles.enum';
 import { merchantProductDto } from './dto/merchantproduct.dto';
 import { MerchantProduct } from './schema/merchantproduct.schema';
 import { MapmyIndiaSDK } from 'mapmyindia-sdk-nodejs';
+import { categoryDto } from './dto/category.dto';
+import { Category } from './schema/category.schema';
 
 @Injectable()
 export class ProductService {
@@ -16,6 +18,7 @@ export class ProductService {
     @InjectModel(User.name) private readonly userModel: Model<User>,
     @InjectModel(MerchantProduct.name)
     readonly merchantProductModel: Model<MerchantProduct>,
+    @InjectModel(Category.name) private readonly categoryModel: Model<Category>,
   ) {}
 
   async addAdminProduct(req: productDto, image) {
@@ -34,6 +37,7 @@ export class ProductService {
       }
       const addproduct = await this.productModel.create({
         productName: req.productName,
+        categoryId: req.categoryId,
         productSpecifications: req.productSpecifications,
         productImage: req.productImage,
       });
@@ -59,7 +63,14 @@ export class ProductService {
 
   async getProductsList() {
     try {
-      const productsList = await this.productModel.find();
+      const productsList = await this.productModel.aggregate([{
+        $lookup: {
+          from: "categories",
+          localField: "categoryId",
+          foreignField: "categoryId",
+          as: "categoryId"
+        }
+      }]);
       if (productsList.length > 0) {
         return {
           statusCode: HttpStatus.OK,
@@ -103,17 +114,17 @@ export class ProductService {
       const searchProds = await this.productModel.find({
         productName: { $regex: new RegExp(req.productName, 'i') },
       });
-      if(searchProds.length > 0) {
+      if (searchProds.length > 0) {
         return {
           statusCode: HttpStatus.OK,
-          message: "Searched Products",
+          message: 'Searched Products',
           data: searchProds,
-        }
+        };
       } else {
         return {
           statusCode: HttpStatus.NOT_FOUND,
-          message: "Products not found by search",
-        }
+          message: 'Products not found by search',
+        };
       }
     } catch (error) {
       return {
@@ -435,9 +446,8 @@ export class ProductService {
         ],
       });
       const userIds = getUsers.map((user) => user.userId);
-      const findAdminProducts = await this.productModel.find({
-        productName: { $regex: new RegExp(req.productName, 'i') },
-      });
+      const findAdminProducts = await this.productModel.find({categoryId: req.categoryId});
+      console.log("catadminprods", findAdminProducts);
       const merchantProds = await Promise.all(
         findAdminProducts.map(async (product) => {
           const matchedProduct = await this.merchantProductModel.aggregate([
@@ -472,7 +482,7 @@ export class ProductService {
       if (filteredMerchantProds.length > 0) {
         return {
           statusCode: HttpStatus.OK,
-          message: 'List of searched products',
+          message: 'List of products',
           data: filteredMerchantProds,
         };
       } else {
@@ -486,6 +496,166 @@ export class ProductService {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: error,
       };
+    }
+  }
+
+  async addCategory(req: categoryDto, image) {
+    try {
+      if (image) {
+        const reqDoc = image.map((doc, index) => {
+          let IsPrimary = false;
+          if (index == 0) {
+            IsPrimary = true;
+          }
+          const randomNumber = Math.floor(Math.random() * 1000000 + 1);
+          return doc.filename;
+        });
+
+        req.categoryImage = reqDoc.toString();
+      }
+      const findExisted = await this.categoryModel.findOne({
+        categoryName: { $regex: new RegExp(req.categoryName, 'i') },
+      });
+      if (findExisted) {
+        return {
+          statusCode: HttpStatus.CONFLICT,
+          message: 'Category already exists',
+        };
+      } else {
+        const createCategory = await this.categoryModel.create(req);
+      if (createCategory) {
+        return {
+          statusCode: HttpStatus.OK,
+          message: 'Category added successfully',
+          data: createCategory,
+        };
+      } else {
+        return {
+          statusCode: HttpStatus.EXPECTATION_FAILED,
+          message: 'Unable to create category',
+        };
+      }
+      }
+    } catch (error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error,
+      };
+    }
+  }
+
+  async getCategoryList() {
+    try{
+      const getCategories = await this.categoryModel.find()
+      if(getCategories.length>0) {
+        return {
+          statusCode: HttpStatus.OK,
+          message: "List of categories",
+          data: getCategories,
+        }
+      } else {
+        return {
+          statusCode: HttpStatus.NOT_FOUND,
+          message: "No Categories found",
+        }
+      }
+    } catch(error){
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error,
+      }
+    }
+  }
+
+  async editCategory(req: categoryDto, image) {
+    try {
+      const findCategory = await this.categoryModel.findOne({ _id: req._id });
+      console.log("category", findCategory);
+      if (!findCategory) {
+        return {
+          statusCode: HttpStatus.NOT_FOUND,
+          message: 'Category Not Found',
+        };
+      } else {
+        if (image) {
+          const reqDoc = image.map((doc, index) => {
+            let IsPrimary = false;
+            if (index == 0) {
+              IsPrimary = true;
+            }
+            const randomNumber = Math.floor(Math.random() * 1000000 + 1);
+            return doc.filename;
+          });
+  
+          req.categoryImage = reqDoc.toString();
+        }
+
+        if(req.categoryImage) {
+          const editCategory = await this.categoryModel.updateOne({_id: req._id}, {
+            $set: {
+              categoryName: req.categoryName,
+              categoryImage: req.categoryImage
+            }
+          });
+          if (editCategory) {
+            return {
+              statusCode: HttpStatus.OK,
+              message: 'Category Edited successfully',
+              data: editCategory,
+            };
+          } else {
+            return {
+              statusCode: HttpStatus.EXPECTATION_FAILED,
+              message: 'Unable to create category',
+            };
+          }
+        } else {
+          const editCategory = await this.categoryModel.updateOne({_id: req._id}, {
+            $set: {
+              categoryName: req.categoryName,
+            }
+          });
+          if (editCategory) {
+            return {
+              statusCode: HttpStatus.OK,
+              message: 'Category Edited successfully',
+              data: editCategory,
+            };
+          } else {
+            return {
+              statusCode: HttpStatus.EXPECTATION_FAILED,
+              message: 'Unable to create category',
+            };
+          }
+        }
+      }
+    } catch (error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error,
+      };
+    }
+  }
+
+  async deleteCategory(req: categoryDto) {
+    try{
+      const removeCategory = await this.categoryModel.deleteOne({_id: req._id});
+      if(removeCategory) {
+        return {
+          statusCode: HttpStatus.OK,
+          message: "Deleted Category Successfully",
+        }
+      } else {
+        return {
+          statusCode: HttpStatus.EXPECTATION_FAILED,
+          message: "Unable to delete category",
+        }
+      }
+    } catch(error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error,
+      }
     }
   }
 }

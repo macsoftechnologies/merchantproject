@@ -6,6 +6,8 @@ export class productDto{
     @ApiProperty()
     productName: string
     @ApiProperty()
+    categoryId: string
+    @ApiProperty()
     productSpecifications: {}
     @ApiProperty()
     productImage: string

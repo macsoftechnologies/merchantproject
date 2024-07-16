@@ -9,6 +9,7 @@ import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/auth/guards/roles.decorator';
 import { Role } from 'src/auth/guards/roles.enum';
 import { merchantProductDto } from './dto/merchantproduct.dto';
+import { categoryDto } from './dto/category.dto';
 
 @Controller('product')
 export class ProductController {
@@ -210,6 +211,92 @@ export class ProductController {
     try{
       const getproducts = await this.productService.searchProductsByLocation(req);
       return getproducts
+    } catch(error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error,
+      }
+    }
+  }
+
+  @UseGuards(JwtGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @Post('/addcategory')
+  @UseInterceptors(
+    AnyFilesInterceptor({
+      storage: diskStorage({
+        destination: './files',
+        filename: (req, file, cb) => {
+          const randomName = Array(32)
+            .fill(null)
+            .map(() => Math.round(Math.random() * 16).toString(16))
+            .join('');
+          cb(null, `${randomName}${extname(file.originalname)}`);
+        },
+      }),
+    }),
+  )
+  async addCategory(@Body() req: categoryDto, @UploadedFiles() image) {
+    try{
+      const addcategory = await this.productService.addCategory(req, image);
+      return addcategory
+    } catch(error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error,
+      }
+    }
+  }
+
+  @Get('/getcatogerieslist')
+  async getCategioriesList() {
+    try{
+      const getcategories = await this.productService.getCategoryList();
+      return getcategories
+    } catch(error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error,
+      }
+    }
+  }
+
+  @UseGuards(JwtGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @Post("/updatecategory")
+  @UseInterceptors(
+    AnyFilesInterceptor({
+      storage: diskStorage({
+        destination: './files',
+        filename: (req, file, cb) => {
+          const randomName = Array(32)
+            .fill(null)
+            .map(() => Math.round(Math.random() * 16).toString(16))
+            .join('');
+          cb(null, `${randomName}${extname(file.originalname)}`);
+        },
+      }),
+    }),
+  )
+  async updateCategory(@Body() req: categoryDto, @UploadedFiles() image) {
+    try{
+      const moderatecategory = await this.productService.editCategory(req, image);
+      return moderatecategory
+    } catch(error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error
+      }
+    }
+  }
+
+  @UseGuards(JwtGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @Post('/deletecategory')
+  async deleteCategory(@Body() req: categoryDto) {
+    try{
+      const deleteCategory = await this.productService.deleteCategory(req);
+      return deleteCategory
     } catch(error) {
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,

@@ -15,29 +15,21 @@ export class User extends Document{
     @Prop()
     userName: string
     @Prop()
-    email: string
-    @Prop()
-    password: string
-    @Prop()
     address: string
     @Prop()
     profileImage: string
     @Prop()
     mobileNumber: string
     @Prop()
-    altMobileNumber: string
-    @Prop()
     shopName: string
     @Prop()
-    shopLocation: string
-    @Prop()
     shopImage: string
-    @Prop()
-    shopLicense: string
     @Prop()
     role: []
     @Prop()
     priority: number
+    @Prop()
+    otp: string
     @Prop({ 
         type: {
             type: String,
