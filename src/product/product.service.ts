@@ -91,15 +91,32 @@ export class ProductService {
     }
   }
 
-  async getProductById(_id: string) {
+  async getProductById(req: productDto) {
     try {
-      const findProduct = await this.productModel.findOne({ _id });
-      if (findProduct) {
+      console.log("id", req._id);
+      const findAdminProd = await this.productModel.findOne({_id: req._id});
+      if(findAdminProd) {
+        const findProduct = await this.productModel.aggregate([
+          {$match: {_id: findAdminProd._id}},
+          {
+            $lookup: {
+              from: "categories",
+              localField: "categoryId",
+              foreignField: "categoryId",
+              as: "categoryId"
+            }
+          }
+        ]);
+          return {
+            statusCode: HttpStatus.OK,
+            message: 'Details of Selected Product',
+            data: findProduct,
+          };
+      } else {
         return {
-          statusCode: HttpStatus.OK,
-          message: 'Details of Selected Product',
-          data: findProduct,
-        };
+          statusCode: HttpStatus.NOT_FOUND,
+          message: "Product Not Found",
+        }
       }
     } catch (error) {
       return {

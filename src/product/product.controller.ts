@@ -60,9 +60,9 @@ export class ProductController {
 
   @UseGuards(JwtGuard)
   @Post('/getproductbyid')
-  async getProductDetails(@Body() _id: string) {
+  async getProductDetails(@Body() req: productDto) {
     try{
-      const productDetails = await this.productService.getProductById(_id);
+      const productDetails = await this.productService.getProductById(req);
       return productDetails
     } catch(error) {
       return {
