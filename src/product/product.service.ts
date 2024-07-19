@@ -203,6 +203,7 @@ export class ProductService {
             {
               $set: {
                 productName: req.productName,
+                categoryId: req.categoryId,
                 productSpecifications: req.productSpecifications,
                 productImage: req.productImage,
               },
@@ -226,6 +227,7 @@ export class ProductService {
             {
               $set: {
                 productName: req.productName,
+                categoryId: req.categoryId,
                 productSpecifications: req.productSpecifications,
               },
             },
