@@ -176,7 +176,7 @@ export class ProductController {
   }
 
   @UseGuards(JwtGuard, RolesGuard)
-  @Roles(Role.MERCHANT)
+  @Roles(Role.MERCHANT, Role.ADMIN)
   @Post('/editmerchantproduct')
   async editMerchantProduct(@Body() req: merchantProductDto) {
     try{
@@ -191,7 +191,7 @@ export class ProductController {
   }
 
   @UseGuards(JwtGuard, RolesGuard)
-  @Roles(Role.MERCHANT)
+  @Roles(Role.MERCHANT, Role.ADMIN)
   @Post('/deletemerchantproduct')
   async deleteMerchantProduct(@Body() req: merchantProductDto) {
     try{
