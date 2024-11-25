@@ -13,6 +13,7 @@ import { ProductModule } from './product/product.module';
 import { AdvertisementsModule } from './advertisements/advertisements.module';
 // const mongoURI = process.env.MONGO_URI;
 const mongoURI =
+    // 'mongodb://gfg_user:gfg%40123@13.232.198.254:27017/GFGBB?authSource=admin'
   'mongodb+srv://macsof:macsof@nextlevelcarwash.yjs3i.mongodb.net/Merchant?retryWrites=true&w=majority';
 
 @Module({

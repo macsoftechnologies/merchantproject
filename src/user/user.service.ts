@@ -5,6 +5,7 @@ import { Model } from 'mongoose';
 import { userDto } from './dto/user.dto';
 import { AuthService } from 'src/auth/auth.service';
 import { Role } from 'src/auth/guards/roles.enum';
+import axios from 'axios';
 
 interface UserModel {
   _id: string;
@@ -52,8 +53,8 @@ export class UserService {
             req.shopImage = attachmentFile;
           }
         } else {
-          req.profileImage === "";
-          req.shopImage === "";
+          req.profileImage === '';
+          req.shopImage === '';
         }
         if (
           req.shopName === ' ' ||
@@ -68,8 +69,8 @@ export class UserService {
             message: 'Please provide all required details',
           };
         }
-        if(!req.priority) {
-          req.priority = 0
+        if (!req.priority) {
+          req.priority = 0;
         }
         const createMerchant = await this.userModel.create({
           userName: req.userName,
@@ -81,9 +82,9 @@ export class UserService {
           role: Role.MERCHANT,
           otp: '',
           coordinates: {
-            type: "Point",
-            coordinates: [req.longitude, req.latitude]
-          }
+            type: 'Point',
+            coordinates: [req.longitude, req.latitude],
+          },
         });
         if (createMerchant) {
           return {
@@ -152,9 +153,9 @@ export class UserService {
           role: Role.CUSTOMER,
           otp: '',
           coordinates: {
-            type: "Point",
-            coordinates: [req.longitude, req.latitude]
-          }
+            type: 'Point',
+            coordinates: [req.longitude, req.latitude],
+          },
         });
         if (createCustomer) {
           return {
@@ -184,20 +185,16 @@ export class UserService {
 
   async loginUser(req: userDto) {
     try {
-      const findUser = await this.userModel.findOne({mobileNumber: req.mobileNumber});
+      const findUser = await this.userModel.findOne({
+        mobileNumber: req.mobileNumber,
+      });
       if (!findUser) {
         return {
           statusCode: HttpStatus.NOT_FOUND,
           message: 'Admin Not Found',
         };
       } else {
-        // let generatedOtp = Math.floor(1000 + Math.random() * 9000);
-        // const updateOTP = await this.userModel.updateOne({_id: findUser._id},{
-        //   $set: {
-        //     otp: generatedOtp
-        //   }
-        // });
-        if (req.otp === "1234") {
+        if (req.otp === findUser.otp) {
           const jwtToken = await this.authService.createToken({ findUser });
           return {
             statusCode: HttpStatus.OK,
@@ -208,9 +205,73 @@ export class UserService {
         } else {
           return {
             statusCode: HttpStatus.BAD_REQUEST,
-            message: "Invalid OTP"
-          }
+            message: 'Invalid OTP',
+          };
         }
+      }
+    } catch (error) {
+      return {
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error,
+      };
+    }
+  }
+
+  async sendOTPToCustomer(req: userDto) {
+    try {
+      const findUser = await this.userModel.findOne({
+        mobileNumber: req.mobileNumber,
+      });
+      if (!findUser) {
+        return {
+          statusCode: HttpStatus.NOT_FOUND,
+          message: 'User not found',
+        };
+      }
+      let generatedOtp = Math.floor(1000 + Math.random() * 900000);
+      const updateOTP = await this.userModel.updateOne(
+        { _id: findUser._id },
+        {
+          $set: {
+            otp: generatedOtp,
+          },
+        },
+      );
+      if (!updateOTP) {
+        return {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Unable to sent OTP',
+        };
+      }
+      const sendOTP = await axios.post(
+        `https://restapi.smscountry.com/v0.1/Accounts/${process.env.SMS_AUTH_KEY}/SMSes/`,
+        {
+          Text: `Your OTP - ${generatedOtp}, for login to your GFG ONLINE SERVICES account. Please do not share with anyone. Thank you.`,
+          Number: `91${req.mobileNumber}`,
+          SenderId: `${process.env.SENDER_ID}`,
+          DRNotifyUrl: 'https://www.domainname.com/notifyurl',
+          DRNotifyHttpMethod: 'POST',
+          Tool: 'API',
+        },
+        {
+          headers: {
+            Authorization: `Basic ${Buffer.from(
+              `${process.env.SMS_AUTH_KEY}:${process.env.PASSWORD}`,
+            ).toString('base64')}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+      if (sendOTP) {
+        return {
+          statusCode: HttpStatus.OK,
+          message: 'OTP sent successfully',
+        };
+      } else {
+        return {
+          statusCode: HttpStatus.EXPECTATION_FAILED,
+          message: 'Unable to send OTP',
+        };
       }
     } catch (error) {
       return {
@@ -222,7 +283,9 @@ export class UserService {
 
   async switchUser(req: userDto, image) {
     try {
-      const findCustomer: UserModel | null = await this.userModel.findOne({mobileNumber: req.mobileNumber});
+      const findCustomer: UserModel | null = await this.userModel.findOne({
+        mobileNumber: req.mobileNumber,
+      });
       if (findCustomer) {
         const isCustomer = findCustomer.role.includes(Role.CUSTOMER);
         const isMerchant = findCustomer.role.includes(Role.MERCHANT);
@@ -249,7 +312,7 @@ export class UserService {
               }
             }
             const switchToMerchant = await this.userModel.updateOne(
-              {mobileNumber: req.mobileNumber},
+              { mobileNumber: req.mobileNumber },
               {
                 $set: {
                   shopName: req.shopName,
@@ -274,7 +337,7 @@ export class UserService {
           }
         } else if (isMerchant && !isCustomer) {
           const switchToCustomer = await this.userModel.updateOne(
-            {mobileNumber: req.mobileNumber},
+            { mobileNumber: req.mobileNumber },
             {
               $push: {
                 role: Role.CUSTOMER,
@@ -313,38 +376,40 @@ export class UserService {
   }
 
   async getUsersList() {
-    try{
+    try {
       const usersList = await this.userModel.find();
-      if(usersList.length>0) {
+      if (usersList.length > 0) {
         return {
           statusCode: HttpStatus.OK,
-          message: "List of users",
+          message: 'List of users',
           usersCount: usersList.length,
-          data: usersList
-        }
+          data: usersList,
+        };
       } else {
         return {
           statusCode: HttpStatus.NOT_FOUND,
-          message: "Users Not Found",
-        }
+          message: 'Users Not Found',
+        };
       }
-    } catch(error) {
+    } catch (error) {
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: error,
-      }
+      };
     }
   }
 
   async getMerchantsList() {
-    try{
+    try {
       const usersList = await this.userModel.find();
-      if(usersList.length>0) {
+      if (usersList.length > 0) {
         let list = [];
-        for(const merchantRecord of usersList) {
-          const findUser: UserModel | null = await this.userModel.findOne({_id: merchantRecord._id});
+        for (const merchantRecord of usersList) {
+          const findUser: UserModel | null = await this.userModel.findOne({
+            _id: merchantRecord._id,
+          });
           const isMerchant = findUser.role.includes(Role.MERCHANT);
-          if(isMerchant) {
+          if (isMerchant) {
             list.push(merchantRecord);
           } else {
             continue;
@@ -352,34 +417,36 @@ export class UserService {
         }
         return {
           statusCode: HttpStatus.OK,
-          message: "List of users",
+          message: 'List of users',
           merchantsCount: list.length,
           data: list,
-        }
+        };
       } else {
         return {
           statusCode: HttpStatus.NOT_FOUND,
-          message: "Users Not Found",
-        }
+          message: 'Users Not Found',
+        };
       }
-    } catch(error) {
+    } catch (error) {
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: error,
-      }
+      };
     }
   }
 
   async getCustomersList() {
-    try{
+    try {
       const usersList = await this.userModel.find();
-      if(usersList.length>0) {
+      if (usersList.length > 0) {
         let list = [];
-        for(const merchantRecord of usersList) {
-          const findUser: UserModel | null = await this.userModel.findOne({_id: merchantRecord._id});
+        for (const merchantRecord of usersList) {
+          const findUser: UserModel | null = await this.userModel.findOne({
+            _id: merchantRecord._id,
+          });
           const isMerchant = findUser.role.includes(Role.MERCHANT);
           const isCustomer = findUser.role.includes(Role.CUSTOMER);
-          if(isCustomer && !isMerchant) {
+          if (isCustomer && !isMerchant) {
             list.push(merchantRecord);
           } else {
             continue;
@@ -387,44 +454,44 @@ export class UserService {
         }
         return {
           statusCode: HttpStatus.OK,
-          message: "List of users",
+          message: 'List of users',
           customersCount: list.length,
           data: list,
-        }
+        };
       } else {
         return {
           statusCode: HttpStatus.NOT_FOUND,
-          message: "Users Not Found",
-        }
+          message: 'Users Not Found',
+        };
       }
-    } catch(error) {
+    } catch (error) {
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: error,
-      }
+      };
     }
   }
 
   async getUserById(req: userDto) {
-    try{
-      const findUser = await this.userModel.findOne({_id: req._id});
-      if(findUser) {
+    try {
+      const findUser = await this.userModel.findOne({ _id: req._id });
+      if (findUser) {
         return {
           statusCode: HttpStatus.OK,
-          message: "Details of user",
+          message: 'Details of user',
           data: findUser,
-        }
+        };
       } else {
         return {
           statusCode: HttpStatus.NOT_FOUND,
-          message: "User not found",
-        }
+          message: 'User not found',
+        };
       }
-    } catch(error) {
+    } catch (error) {
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: error,
-      }
+      };
     }
   }
 
@@ -437,19 +504,23 @@ export class UserService {
           message: 'User not found',
         };
       }
-  
+
       // Process images if provided
       if (image) {
         if (image.profileImage && image.profileImage[0]) {
-          const attachmentFile = await this.authService.saveFile(image.profileImage[0]);
+          const attachmentFile = await this.authService.saveFile(
+            image.profileImage[0],
+          );
           req.profileImage = attachmentFile;
         }
         if (image.shopImage && image.shopImage[0]) {
-          const attachmentFile = await this.authService.saveFile(image.shopImage[0]);
+          const attachmentFile = await this.authService.saveFile(
+            image.shopImage[0],
+          );
           req.shopImage = attachmentFile;
         }
       }
-  
+
       const updateData: any = {
         userName: req.userName,
         address: req.address,
@@ -458,29 +529,29 @@ export class UserService {
         shopName: req.shopName,
         shopImage: req.shopImage,
       };
-  
+
       if (req.longitude !== undefined && req.latitude !== undefined) {
         updateData.coordinates = {
-          type: "Point",
+          type: 'Point',
           coordinates: [req.longitude, req.latitude],
         };
       }
-  
+
       const modifyUser = await this.userModel.updateOne(
         { _id: req._id },
         { $set: updateData },
       );
-  
+
       if (modifyUser.modifiedCount > 0) {
         return {
           statusCode: HttpStatus.OK,
-          message: "User updated successfully",
+          message: 'User updated successfully',
           data: modifyUser,
         };
       } else {
         return {
           statusCode: HttpStatus.EXPECTATION_FAILED,
-          message: "User update failed",
+          message: 'User update failed',
         };
       }
     } catch (error) {
@@ -490,36 +561,35 @@ export class UserService {
       };
     }
   }
-  
- 
+
   async deleteUser(req: userDto) {
-    try{
-      const findUser = await this.userModel.findOne({_id: req._id});
-      if(findUser) {
-        const deleteUser = await this.userModel.deleteOne({_id: req._id});
-        if(deleteUser) {
+    try {
+      const findUser = await this.userModel.findOne({ _id: req._id });
+      if (findUser) {
+        const deleteUser = await this.userModel.deleteOne({ _id: req._id });
+        if (deleteUser) {
           return {
             statusCode: HttpStatus.OK,
-            message: "User deleted Successfully",
+            message: 'User deleted Successfully',
             data: deleteUser,
-          }
+          };
         } else {
           return {
             statusCode: HttpStatus.EXPECTATION_FAILED,
-            message: "User not deleted",
-          }
+            message: 'User not deleted',
+          };
         }
       } else {
         return {
           statusCode: HttpStatus.NOT_FOUND,
-          message: "User not found",
-        }
+          message: 'User not found',
+        };
       }
-    } catch(error) {
+    } catch (error) {
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: error,
-      }
+      };
     }
   }
 }
